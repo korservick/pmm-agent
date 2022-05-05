@@ -229,7 +229,11 @@ func (s *Supervisor) setAgentProcesses(agentProcesses map[string]*agentpb.SetSta
 
 	// start new agents
 	for _, agentID := range toStart {
-		port, err := s.portsRegistry.Reserve()
+		var (
+			port uint16
+			err  error
+		)
+
 		if s.ports.Fixed {
 			switch agentProcesses[agentID].Type {
 			case inventorypb.AgentType_NODE_EXPORTER:
@@ -251,11 +255,19 @@ func (s *Supervisor) setAgentProcesses(agentProcesses map[string]*agentpb.SetSta
 			default:
 				s.l.Infof("agentID: %s, agent.Type %s", agentID, agentProcesses[agentID].Type.String())
 			}
-		}
-		if err != nil {
-			s.l.Errorf("Failed to reserve port: %s.", err)
-			// TODO report that error to server
-			continue
+			err = s.portsRegistry.ReservePort(port)
+			if err != nil {
+				s.l.Errorf("Failed to reserve port: %s.", err)
+				// TODO report that error to server
+				continue
+			}
+		} else {
+			port, err = s.portsRegistry.Reserve()
+			if err != nil {
+				s.l.Errorf("Failed to reserve port: %s.", err)
+				// TODO report that error to server
+				continue
+			}
 		}
 		if err := s.startProcess(agentID, agentProcesses[agentID], port); err != nil {
 			s.l.Errorf("Failed to start Agent: %s.", err)

@@ -84,6 +84,27 @@ func (r *portsRegistry) Reserve() (uint16, error) {
 	return 0, errNoFreePort
 }
 
+func (r *portsRegistry) ReservePort(port uint16) error {
+	r.m.Lock()
+	defer r.m.Unlock()
+
+	if _, ok := r.reserved[port]; ok {
+		return errNoFreePort
+	}
+
+	l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	if l != nil {
+		_ = l.Close()
+	}
+	if err != nil {
+		return errNoFreePort
+	}
+
+	r.reserved[port] = struct{}{}
+
+	return nil
+}
+
 // Release releases port.
 func (r *portsRegistry) Release(port uint16) error {
 	r.m.Lock()
