@@ -91,6 +91,7 @@ func NewSupervisor(ctx context.Context, paths *config.Paths, ports *config.Ports
 	supervisor := &Supervisor{
 		ctx:           ctx,
 		paths:         paths,
+		ports:         ports,
 		serverCfg:     server,
 		portsRegistry: newPortsRegistry(ports.Min, ports.Max, nil),
 		changes:       make(chan *agentpb.StateChangedRequest, 10),
@@ -229,6 +230,28 @@ func (s *Supervisor) setAgentProcesses(agentProcesses map[string]*agentpb.SetSta
 	// start new agents
 	for _, agentID := range toStart {
 		port, err := s.portsRegistry.Reserve()
+		if s.ports.Fixed {
+			switch agentProcesses[agentID].Type {
+			case inventorypb.AgentType_NODE_EXPORTER:
+				port = s.ports.NodeExporter
+			case inventorypb.AgentType_MYSQLD_EXPORTER:
+				port = s.ports.MySQLdExporter
+			case inventorypb.AgentType_MONGODB_EXPORTER:
+				port = s.ports.MongoDBExporter
+			case inventorypb.AgentType_POSTGRES_EXPORTER:
+				port = s.ports.PostgresExporter
+			case inventorypb.AgentType_PROXYSQL_EXPORTER:
+				port = s.ports.ProxySQLExporter
+			case inventorypb.AgentType_RDS_EXPORTER:
+				port = s.ports.RDSExporter
+			case inventorypb.AgentType_AZURE_DATABASE_EXPORTER:
+				port = s.ports.AzureExporter
+			case inventorypb.AgentType_VM_AGENT:
+				port = s.ports.VMAgent
+			default:
+				s.l.Infof("agentID: %s, agent.Type %s", agentID, agentProcesses[agentID].Type.String())
+			}
+		}
 		if err != nil {
 			s.l.Errorf("Failed to reserve port: %s.", err)
 			// TODO report that error to server
