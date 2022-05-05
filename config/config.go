@@ -107,8 +107,17 @@ type Paths struct {
 
 // Ports represents ports configuration.
 type Ports struct {
-	Min uint16 `yaml:"min"`
-	Max uint16 `yaml:"max"`
+	Fixed            bool   `yaml:"fixed"`
+	Min              uint16 `yaml:"min"`
+	Max              uint16 `yaml:"max"`
+	NodeExporter     uint16 `yaml:"node_exporter"`
+	MySQLdExporter   uint16 `yaml:"mysqld_exporter"`
+	MongoDBExporter  uint16 `yaml:"mongodb_exporter"`
+	PostgresExporter uint16 `yaml:"postgres_exporter"`
+	ProxySQLExporter uint16 `yaml:"proxysql_exporter"`
+	RDSExporter      uint16 `yaml:"rds_exporter"`
+	AzureExporter    uint16 `yaml:"azure_exporter"`
+	VMAgent          uint16 `yaml:"vmagent"`
 }
 
 // Setup contains `pmm-agent setup` flag and argument values.
@@ -361,10 +370,26 @@ func Application(cfg *Config) (*kingpin.Application, *string) {
 		Envar("PMM_AGENT_PATHS_TEMPDIR").StringVar(&cfg.Paths.TempDir)
 	// no flag for SlowLogFilePrefix - it is only for development and testing
 
+	app.Flag("ports-fixed", "Enable fixed exporters ports [PMM_AGENT_PORTS_FIXED]").
+		Envar("PMM_AGENT_PORTS_FIXED").BoolVar(&cfg.Ports.Fixed)
 	app.Flag("ports-min", "Minimal allowed port number for listening sockets [PMM_AGENT_PORTS_MIN]").
 		Envar("PMM_AGENT_PORTS_MIN").Uint16Var(&cfg.Ports.Min)
 	app.Flag("ports-max", "Maximal allowed port number for listening sockets [PMM_AGENT_PORTS_MAX]").
 		Envar("PMM_AGENT_PORTS_MAX").Uint16Var(&cfg.Ports.Max)
+	app.Flag("ports-node_exporter", "Port node_exporter to use [PMM_AGENT_PORTS_NODE_EXPORTER]").
+		Envar("PMM_AGENT_PORTS_NODE_EXPORTER").Uint16Var(&cfg.Ports.NodeExporter)
+	app.Flag("ports-mysqld_exporter", "Port mysqld_exporter to use [PMM_AGENT_PORTS_MYSQLD_EXPORTER]").
+		Envar("PMM_AGENT_PORTS_MYSQLD_EXPORTER").Uint16Var(&cfg.Ports.MySQLdExporter)
+	app.Flag("ports-mongodb_exporter", "Port mongodb_exporter to use [PMM_AGENT_PORTS_MONGODB_EXPORTER]").
+		Envar("PMM_AGENT_PORTS_MONGODB_EXPORTER").Uint16Var(&cfg.Ports.MongoDBExporter)
+	app.Flag("ports-postgres_exporter", "Port postgres_exporter to use [PMM_AGENT_PORTS_POSTGRES_EXPORTER]").
+		Envar("PMM_AGENT_PORTS_POSTGRES_EXPORTER").Uint16Var(&cfg.Ports.PostgresExporter)
+	app.Flag("ports-proxysql_exporter", "Port proxysql_exporter to use [PMM_AGENT_PORTS_PROXYSQL_EXPORTER]").
+		Envar("PMM_AGENT_PORTS_PROXYSQL_EXPORTER").Uint16Var(&cfg.Ports.ProxySQLExporter)
+	app.Flag("ports-azure_exporter", "Port azure_exporter to use [PMM_AGENT_PORTS_AZURE_EXPORTER]").
+		Envar("PMM_AGENT_PORTS_AZURE_EXPORTER").Uint16Var(&cfg.Ports.AzureExporter)
+	app.Flag("ports-vmagent", "Path vmagent to use [PMM_AGENT_PORTS_VMAGENT]").
+		Envar("PMM_AGENT_PORTS_VMAGENT").Uint16Var(&cfg.Ports.VMAgent)
 
 	app.Flag("log-level", "Set logging level [PMM_AGENT_LOG_LEVEL]").
 		Envar("PMM_AGENT_LOG_LEVEL").EnumVar(&cfg.LogLevel, "debug", "info", "warn", "error", "fatal")

@@ -50,6 +50,7 @@ import (
 type Supervisor struct {
 	ctx           context.Context
 	paths         *config.Paths
+	ports         *config.Ports
 	serverCfg     *config.Server
 	portsRegistry *portsRegistry
 	changes       chan *agentpb.StateChangedRequest
@@ -233,7 +234,6 @@ func (s *Supervisor) setAgentProcesses(agentProcesses map[string]*agentpb.SetSta
 			// TODO report that error to server
 			continue
 		}
-
 		if err := s.startProcess(agentID, agentProcesses[agentID], port); err != nil {
 			s.l.Errorf("Failed to start Agent: %s.", err)
 			// TODO report that error to server
@@ -505,20 +505,41 @@ func (s *Supervisor) processParams(agentID string, agentProcess *agentpb.SetStat
 	case inventorypb.AgentType_NODE_EXPORTER:
 		templateParams["paths_base"] = s.paths.PathsBase
 		processParams.Path = s.paths.NodeExporter
+		if s.ports.Fixed {
+			templateParams["listen_port"] = s.ports.NodeExporter
+		}
 	case inventorypb.AgentType_MYSQLD_EXPORTER:
 		templateParams["paths_base"] = s.paths.PathsBase
 		processParams.Path = s.paths.MySQLdExporter
+		if s.ports.Fixed {
+			templateParams["listen_port"] = s.ports.MySQLdExporter
+		}
 	case inventorypb.AgentType_MONGODB_EXPORTER:
 		processParams.Path = s.paths.MongoDBExporter
+		if s.ports.Fixed {
+			templateParams["listen_port"] = s.ports.MongoDBExporter
+		}
 	case inventorypb.AgentType_POSTGRES_EXPORTER:
 		templateParams["paths_base"] = s.paths.PathsBase
 		processParams.Path = s.paths.PostgresExporter
+		if s.ports.Fixed {
+			templateParams["listen_port"] = s.ports.PostgresExporter
+		}
 	case inventorypb.AgentType_PROXYSQL_EXPORTER:
 		processParams.Path = s.paths.ProxySQLExporter
+		if s.ports.Fixed {
+			templateParams["listen_port"] = s.ports.ProxySQLExporter
+		}
 	case inventorypb.AgentType_RDS_EXPORTER:
 		processParams.Path = s.paths.RDSExporter
+		if s.ports.Fixed {
+			templateParams["listen_port"] = s.ports.RDSExporter
+		}
 	case inventorypb.AgentType_AZURE_DATABASE_EXPORTER:
 		processParams.Path = s.paths.AzureExporter
+		if s.ports.Fixed {
+			templateParams["listen_port"] = s.ports.AzureExporter
+		}
 	case type_TEST_SLEEP:
 		processParams.Path = "sleep"
 	case inventorypb.AgentType_VM_AGENT:
@@ -532,6 +553,9 @@ func (s *Supervisor) processParams(agentID string, agentProcess *agentpb.SetStat
 		templateParams["server_username"] = s.serverCfg.Username
 		templateParams["tmp_dir"] = s.paths.TempDir
 		processParams.Path = s.paths.VMAgent
+		if s.ports.Fixed {
+			templateParams["listen_port"] = s.ports.VMAgent
+		}
 	default:
 		return nil, errors.Errorf("unhandled agent type %[1]s (%[1]d).", agentProcess.Type)
 	}
